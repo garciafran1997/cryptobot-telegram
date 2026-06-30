@@ -1,0 +1,47 @@
+name: Crypto Alert Bot
+
+on:
+  schedule:
+    # Cada 15 minutos (UTC). Ajusta si quieres mas/menos frecuencia.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}  # permite ejecutarlo manualmente desde la pestaña Actions
+
+permissions:
+  contents: write  # necesario para que el bot guarde su estado (alert_state.json)
+
+jobs:
+  check-market:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run alert bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SYMBOL: "BTC/USDT"
+          TIMEFRAME: "1h"
+          FAST_MA: "20"
+          SLOW_MA: "50"
+          RSI_PERIOD: "14"
+          RSI_OVERBOUGHT: "70"
+          STOP_LOSS_PCT: "0.03"
+          TAKE_PROFIT_PCT: "0.06"
+        run: python alert_bot.py
+
+      - name: Guardar estado (commit alert_state.json)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add alert_state.json || true
+          git diff --quiet --cached || git commit -m "Actualizar estado del bot [skip ci]"
+          git push || true

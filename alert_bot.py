@@ -55,7 +55,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("alert_bot")
 
-exchange = ccxt.binance()
+exchange = ccxt.kraken()
 
 
 def send_telegram(message: str):
